@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alibaba Product Updater</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-button {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .update-type-section {
+            margin-bottom: 30px;
+        }
+
+        .update-type-section h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .update-type-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .update-type-btn {
+            padding: 15px 30px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+            min-width: 150px;
+        }
+
+        .update-type-btn:hover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+
+        .update-type-btn.selected {
+            border-color: #007bff;
+            background: #007bff;
+            color: white;
+        }
+
+        .start-update-btn {
+            width: 100%;
+            padding: 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .start-update-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .start-update-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            border-left: 5px solid #007bff;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .progress-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+        }
+
+        .progress-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        .status-starting { background: #fff3cd; color: #856404; }
+        .status-loading_lookup { background: #d1ecf1; color: #0c5460; }
+        .status-processing { background: #d4edda; color: #155724; }
+        .status-completed { background: #d1ecf1; color: #0c5460; }
+        .status-error { background: #f8d7da; color: #721c24; }
+
+        .progress-bar-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .progress-details {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .download-section {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #17a2b8;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .update-type-buttons {
+                flex-direction: column;
+            }
+            
+            .progress-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Alibaba Product Updater</h1>
+            <p>Upload your CSV file and update product prices or inventory with ultra-high speed processing</p>
+        </div>
+
+        <div class="main-content">
+            <!-- File Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <h3>📁 Upload CSV File</h3>
+                <p style="margin-bottom: 20px; color: #6c757d;">
+                    Upload a CSV file with columns: <strong>SPU_ID, price, inventory</strong>
+                </p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" accept=".csv">
+                    <button class="file-input-button" onclick="document.getElementById('fileInput').click()">
+                        📤 Choose CSV File or Drag & Drop
+                    </button>
+                </div>
+                <div class="file-info" id="fileInfo">
+                    <p><strong>File:</strong> <span id="fileName"></span></p>
+                    <p><strong>Rows:</strong> <span id="rowCount"></span></p>
+                </div>
+            </div>
+
+            <!-- Update Type Selection -->
+            <div class="update-type-section">
+                <h3>⚙️ Select Update Type</h3>
+                <div class="update-type-buttons">
+                    <button class="update-type-btn" data-type="price">
+                        💰 Update Prices
+                    </button>
+                    <button class="update-type-btn" data-type="inventory">
+                        📦 Update Inventory
+                    </button>
+                </div>
+            </div>
+
+            <!-- Start Update Button -->
+            <button class="start-update-btn" id="startUpdateBtn" disabled>
+                🚀 Start Update Process
+            </button>
+
+            <!-- Progress Section -->
+            <div class="progress-section" id="progressSection">
+                <div class="progress-card">
+                    <div class="progress-header">
+                        <div class="progress-title">Update Progress</div>
+                        <div class="progress-status" id="progressStatus">Starting</div>
+                    </div>
+                    
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    
+                    <div class="progress-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="processedCount">0</div>
+                            <div class="stat-label">Processed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="successCount">0</div>
+                            <div class="stat-label">Successful</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="failedCount">0</div>
+                            <div class="stat-label">Failed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="currentRate">0</div>
+                            <div class="stat-label">Rate/sec</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-details">
+                        <p><strong>ETA:</strong> <span id="etaTime">Calculating...</span></p>
+                        <p><strong>Update Type:</strong> <span id="updateTypeDisplay"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-section" id="downloadSection">
+                <h3>📊 Download Report</h3>
+                <p>Your update has been completed. Download the detailed report below.</p>
+                <a href="#" class="download-btn" id="downloadBtn">📥 Download Report</a>
+            </div>
+
+            <!-- Messages -->
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let selectedUpdateType = null;
+        let currentJobId = null;
+        let progressInterval = null;
+
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const startUpdateBtn = document.getElementById('startUpdateBtn');
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadFile(file);
+            }
+        }
+
+        // Drag and drop handling
+        const uploadSection = document.getElementById('uploadSection');
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'text/csv') {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect({ target: { files: [file] } });
+            }
+        });
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    selectedFile = data.filename;
+                    document.getElementById('fileName').textContent = file.name;
+                    document.getElementById('rowCount').textContent = data.row_count.toLocaleString();
+                    fileInfo.style.display = 'block';
+                    checkReadyToStart();
+                    showSuccess('File uploaded successfully!');
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                showError('Upload failed: ' + error.message);
+            });
+        }
+
+        // Update type selection
+        document.querySelectorAll('.update-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.update-type-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedUpdateType = btn.dataset.type;
+                checkReadyToStart();
+            });
+        });
+
+        function checkReadyToStart() {
+            if (selectedFile && selectedUpdateType) {
+                startUpdateBtn.disabled = false;
+                startUpdateBtn.style.display = 'block';
+            }
+        }
+
+        // Start update process
+        startUpdateBtn.addEventListener('click', () => {
+            if (!selectedFile || !selectedUpdateType) return;
+
+            const data = {
+                filename: selectedFile,
+                update_type: selectedUpdateType
+            };
+
+            fetch('/start_update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentJobId = data.job_id;
+                    document.getElementById('updateTypeDisplay').textContent = 
+                        selectedUpdateType === 'price' ? 'Price Updates' : 'Inventory Updates';
+                    document.getElementById('progressSection').style.display = 'block';
+                    startProgressTracking();
+                    showSuccess('Update process started!');
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                showError('Failed to start update: ' + error.message);
+            });
+        });
+
+        function startProgressTracking() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+
+            progressInterval = setInterval(() => {
+                if (!currentJobId) return;
+
+                fetch(`/progress/${currentJobId}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateProgress(data);
+                    
+                    if (data.status === 'completed' || data.status === 'error') {
+                        clearInterval(progressInterval);
+                        if (data.status === 'completed') {
+                            showCompletion(data);
+                        } else {
+                            showError('Update failed: ' + (data.error || 'Unknown error'));
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Progress tracking error:', error);
+                });
+            }, 1000);
+        }
+
+        function updateProgress(data) {
+            // Update progress bar
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = Math.round(data.progress || 0);
+            progressBar.style.width = progressPercent + '%';
+
+            // Update status
+            const statusElement = document.getElementById('progressStatus');
+            statusElement.textContent = data.status.replace('_', ' ');
+            statusElement.className = 'progress-status status-' + data.status;
+
+            // Update stats
+            document.getElementById('processedCount').textContent = (data.processed || 0).toLocaleString();
+            document.getElementById('successCount').textContent = (data.successful || 0).toLocaleString();
+            document.getElementById('failedCount').textContent = (data.failed || 0).toLocaleString();
+            document.getElementById('currentRate').textContent = (data.current_rate || 0).toFixed(1);
+            
+            // Update ETA
+            const etaElement = document.getElementById('etaTime');
+            if (data.eta_minutes > 0) {
+                etaElement.textContent = Math.round(data.eta_minutes) + ' minutes';
+            } else {
+                etaElement.textContent = 'Calculating...';
+            }
+        }
+
+        function showCompletion(data) {
+            const downloadSection = document.getElementById('downloadSection');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            if (data.report_file) {
+                downloadBtn.href = `/download/${data.report_file}`;
+                downloadSection.style.display = 'block';
+            }
+
+            if (data.final_stats) {
+                showSuccess(`Update completed! Processed ${data.final_stats.total_processed.toLocaleString()} products with ${data.final_stats.success_rate.toFixed(1)}% success rate.`);
+            }
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+        });
+    </script>
+</body>
+</html>
