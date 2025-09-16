@@ -267,9 +267,14 @@ def cleanup_job(job_id):
 if __name__ == '__main__':
     print("🚀 Starting Alibaba Product Updater Web Application")
     print("=" * 60)
-    print("📱 Web Interface: http://localhost:8080")
+    
+    # Get port from environment variable (Railway sets this)
+    port = int(os.environ.get('PORT', 8080))
+    
+    print(f"📱 Web Interface: http://0.0.0.0:{port}")
     print("📁 Upload Directory: uploads/")
     print("📊 Progress Tracking: Real-time updates")
     print("=" * 60)
     
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    # Run in production mode on Railway
+    app.run(debug=False, host='0.0.0.0', port=port)

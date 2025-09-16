@@ -1,0 +1,19 @@
+# Ignore these files for Railway deployment
+*.csv
+*.json
+uploads/
+*.log
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.env
+.git/
+.gitignore
+README*.md
+test_*.py
+*.md
